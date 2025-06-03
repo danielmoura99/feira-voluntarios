@@ -14,11 +14,11 @@ export interface DisponibilidadeData {
   data: string;
   horario: string;
   atividade: string;
+  slot: number;
 }
 
-// ✅ CORREÇÃO DO BUG DE DUPLICAÇÃO NO CÓDIGO
+// Função para gerar identificador da casa espírita
 function gerarIdentificadorCasa(nomeCompleto: string): string {
-  // Remover palavras comuns e conectores
   const palavrasIgnorar = [
     "centro",
     "espirita",
@@ -48,7 +48,6 @@ function gerarIdentificadorCasa(nomeCompleto: string): string {
   const temPrefixo = nomeCompleto.includes(" - ");
   if (temPrefixo) {
     const prefixo = nomeCompleto.split(" - ")[0].trim();
-    // Se o prefixo é válido (não vazio e não é só números), usar ele
     if (prefixo && prefixo.length > 1 && !/^\d+$/.test(prefixo)) {
       return prefixo;
     }
@@ -56,18 +55,17 @@ function gerarIdentificadorCasa(nomeCompleto: string): string {
 
   const palavras = nomeCompleto
     .toLowerCase()
-    .normalize("NFD") // Remove acentos
-    .replace(/[\u0300-\u036f]/g, "") // Remove marcas diacríticas
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .split(/\s+/)
     .filter(
       (palavra) =>
         palavra.length > 2 &&
         !palavrasIgnorar.includes(palavra) &&
-        !/^\d+$/.test(palavra) // Remove números puros
+        !/^\d+$/.test(palavra)
     );
 
   if (palavras.length === 0) {
-    // Fallback: usar as primeiras letras do nome original
     return nomeCompleto
       .replace(/[^a-zA-Z\s]/g, "")
       .split(" ")
@@ -77,17 +75,14 @@ function gerarIdentificadorCasa(nomeCompleto: string): string {
       .substring(0, 6);
   }
 
-  // Se tem só uma palavra relevante, usar ela
   if (palavras.length === 1) {
     return palavras[0].charAt(0).toUpperCase() + palavras[0].slice(1);
   }
 
-  // Se tem 2 palavras, usar ambas
   if (palavras.length === 2) {
     return palavras.map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
   }
 
-  // Se tem mais de 2, usar as 2 mais significativas (normalmente as primeiras)
   return palavras
     .slice(0, 2)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
@@ -96,23 +91,15 @@ function gerarIdentificadorCasa(nomeCompleto: string): string {
 
 async function gerarCodigoVoluntario(casaEspirita: string): Promise<string> {
   try {
-    // Gerar identificador da casa
     const identificadorCasa = gerarIdentificadorCasa(casaEspirita);
 
-    // Buscar o próximo número para esta casa
     const ultimoVoluntario = await prisma.voluntario.findFirst({
-      where: {
-        casaEspirita: casaEspirita,
-      },
-      orderBy: {
-        createdAt: "desc",
-      },
+      where: { casaEspirita: casaEspirita },
+      orderBy: { createdAt: "desc" },
     });
 
     let proximoNumero = 1;
-
     if (ultimoVoluntario) {
-      // Extrair o número do código atual
       const codigoAtual = ultimoVoluntario.codigo;
       const match = codigoAtual.match(/-(\d+)$/);
       if (match) {
@@ -123,7 +110,6 @@ async function gerarCodigoVoluntario(casaEspirita: string): Promise<string> {
     return `${identificadorCasa}-${proximoNumero}`;
   } catch (error) {
     console.error("Erro ao gerar código:", error);
-    // Fallback para um código simples baseado em timestamp
     const timestamp = Date.now().toString().slice(-4);
     return `VOL-${timestamp}`;
   }
@@ -131,31 +117,24 @@ async function gerarCodigoVoluntario(casaEspirita: string): Promise<string> {
 
 export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
   try {
-    // Validações básicas
     if (!data.nome || !data.telefone || !data.email || !data.casaEspirita) {
       return { success: false, error: "Todos os campos são obrigatórios" };
     }
 
-    // Normalizar email
     const emailNormalizado = data.email.toLowerCase().trim();
-
-    // Validar formato de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(emailNormalizado)) {
       return { success: false, error: "Formato de email inválido" };
     }
 
-    // ✅ VERIFICAR SE EMAIL JÁ EXISTE E RETORNAR DADOS DO VOLUNTÁRIO
     const emailExistente = await prisma.voluntario.findFirst({
-      where: {
-        email: emailNormalizado,
-      },
+      where: { email: emailNormalizado },
     });
 
     if (emailExistente) {
       return {
         success: false,
-        error: "EMAIL_JA_CADASTRADO", // ✅ Tipo específico de erro
+        error: "EMAIL_JA_CADASTRADO",
         voluntarioExistente: {
           nome: emailExistente.nome,
           codigo: emailExistente.codigo,
@@ -163,15 +142,13 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
       };
     }
 
-    // Gerar código único
     const codigo = await gerarCodigoVoluntario(data.casaEspirita);
 
-    // Criar voluntário
     const voluntario = await prisma.voluntario.create({
       data: {
         codigo,
         nome: data.nome.trim(),
-        telefone: data.telefone.replace(/\D/g, ""), // Remove formatação
+        telefone: data.telefone.replace(/\D/g, ""),
         email: emailNormalizado,
         casaEspirita: data.casaEspirita.trim(),
       },
@@ -197,17 +174,20 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
 
 export async function buscarVoluntario(codigo: string) {
   try {
-    if (!codigo || !codigo.trim()) {
+    if (!codigo?.trim()) {
       return { success: false, error: "Código é obrigatório" };
     }
 
     const voluntario = await prisma.voluntario.findFirst({
-      where: {
-        codigo: codigo.toUpperCase().trim(),
-      },
+      where: { codigo: codigo.toUpperCase().trim() },
       include: {
         disponibilidades: {
-          orderBy: [{ data: "asc" }, { horario: "asc" }, { atividade: "asc" }],
+          orderBy: [
+            { data: "asc" },
+            { horario: "asc" },
+            { atividade: "asc" },
+            { slot: "asc" }, // ✅ ORDENAR POR SLOT TAMBÉM
+          ],
         },
       },
     });
@@ -232,12 +212,10 @@ export async function salvarDisponibilidade(
   disponibilidades: DisponibilidadeData[]
 ) {
   try {
-    // Validações
-    if (!voluntarioId || !voluntarioId.trim()) {
+    if (!voluntarioId?.trim()) {
       return { success: false, error: "ID do voluntário é obrigatório" };
     }
 
-    // Verificar se voluntário existe
     const voluntarioExiste = await prisma.voluntario.findUnique({
       where: { id: voluntarioId },
     });
@@ -246,27 +224,54 @@ export async function salvarDisponibilidade(
       return { success: false, error: "Voluntário não encontrado" };
     }
 
-    // Validar disponibilidades
+    // ✅ VALIDAR DISPONIBILIDADES COM SLOT
     if (disponibilidades.length > 0) {
       for (const disp of disponibilidades) {
-        if (!disp.data || !disp.horario || !disp.atividade) {
+        if (!disp.data || !disp.horario || !disp.atividade || !disp.slot) {
           return {
             success: false,
             error: "Todos os campos de disponibilidade são obrigatórios",
           };
         }
+
+        // Validar que slot está entre 1 e 4
+        if (disp.slot < 1 || disp.slot > 4) {
+          return {
+            success: false,
+            error: "Slot deve estar entre 1 e 4",
+          };
+        }
       }
     }
 
-    // Usar transação para garantir consistência
     await prisma.$transaction(async (tx) => {
-      // Deletar disponibilidades existentes
+      // Deletar disponibilidades existentes do voluntário
       await tx.disponibilidade.deleteMany({
         where: { voluntarioId },
       });
 
-      // Criar novas disponibilidades
+      // ✅ VERIFICAR SE SLOTS JÁ ESTÃO OCUPADOS
       if (disponibilidades.length > 0) {
+        for (const disp of disponibilidades) {
+          // Verificar se o slot já está ocupado por outro voluntário
+          const slotOcupado = await tx.disponibilidade.findFirst({
+            where: {
+              data: disp.data,
+              horario: disp.horario,
+              atividade: disp.atividade,
+              slot: disp.slot,
+              voluntarioId: { not: voluntarioId }, // Excluir o próprio voluntário
+            },
+          });
+
+          if (slotOcupado) {
+            throw new Error(
+              `Slot ${disp.slot} já está ocupado para ${disp.data} ${disp.horario}`
+            );
+          }
+        }
+
+        // Criar novas disponibilidades
         await tx.disponibilidade.createMany({
           data: disponibilidades.map((disp) => ({
             ...disp,
@@ -282,6 +287,11 @@ export async function salvarDisponibilidade(
     return { success: true };
   } catch (error) {
     console.error("Erro ao salvar disponibilidade:", error);
+
+    if (error instanceof Error && error.message.includes("Slot")) {
+      return { success: false, error: error.message };
+    }
+
     return { success: false, error: "Erro ao salvar disponibilidade" };
   }
 }

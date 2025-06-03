@@ -455,12 +455,13 @@ export default function GradeHorarios({ voluntario }: Props) {
     const configPeriodo =
       MAPA_CORES[data as keyof typeof MAPA_CORES]?.[horario];
 
-    // Não permitir seleção em períodos desabilitados
     if (configPeriodo?.tipo === "desabilitado") {
       return;
     }
 
     const atividade = configPeriodo?.tipo || "feira_aberta";
+
+    // ✅ INCLUIR O SLOT NA CHAVE
     const key = `${data}-${horario}-${atividade}-${slot}`;
     const newDisponibilidades = new Set(disponibilidades);
 
@@ -480,13 +481,27 @@ export default function GradeHorarios({ voluntario }: Props) {
       const disponibilidadesArray: DisponibilidadeData[] = Array.from(
         disponibilidades
       ).map((key) => {
-        const [data, horario, atividade, slotStr] = key.split("-");
-        return {
-          data,
-          horario,
-          atividade,
-          slot: parseInt(slotStr),
-        };
+        const parts = key.split("-");
+
+        // ✅ VERIFICAR SE TEM 4 PARTES (data-horario-atividade-slot)
+        if (parts.length === 4) {
+          const [data, horario, atividade, slotStr] = parts;
+          return {
+            data,
+            horario,
+            atividade,
+            slot: parseInt(slotStr),
+          };
+        } else {
+          // ✅ FALLBACK para dados antigos sem slot
+          const [data, horario, atividade] = parts;
+          return {
+            data,
+            horario,
+            atividade,
+            slot: 1, // slot padrão
+          };
+        }
       });
 
       const result = await salvarDisponibilidade(
