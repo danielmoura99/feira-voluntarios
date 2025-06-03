@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Voluntario {
+  id          String   @id @default(cuid())
+  codigo      String   @unique
+  nome        String
+  telefone    String
+  email       String
+  casaEspirita String
+  createdAt   DateTime @default(now())
+  
+  disponibilidades Disponibilidade[]
+  
+  @@map("voluntarios")
+}
+
+model Disponibilidade {
+  id            String     @id @default(cuid())
+  voluntarioId  String
+  data          String
+  horario       String
+  atividade     String
+  voluntario    Voluntario @relation(fields: [voluntarioId], references: [id], onDelete: Cascade)
+  
+  @@unique([voluntarioId, data, horario, atividade])
+  @@map("disponibilidades")
+}
