@@ -1,36 +1,97 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sistema de Voluntários - Feira do Livro Espírita
 
-## Getting Started
+Sistema web para cadastro e organização de voluntários da 54ª Feira do Livro Espírita e 31ª Feira do Livro Espírita Infantil.
 
-First, run the development server:
+## 🎯 Funcionalidades
+
+- ✅ Cadastro de voluntários com código único
+- ✅ Grade interativa de horários e atividades
+- ✅ Dashboard com estatísticas e visualização completa
+- ✅ Interface responsiva (desktop e mobile)
+- ✅ Sistema de busca e filtros
+- ✅ Persistência de dados em PostgreSQL
+
+## 🚀 Tecnologias
+
+- **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
+- **Backend**: Next.js API Routes, Prisma ORM
+- **Banco**: PostgreSQL (Neon)
+- **Deploy**: Vercel (em breve)
+
+## 📱 Capturas de Tela
+
+### Página Inicial
+
+Interface inicial com acesso ao cadastro e dashboard.
+
+### Cadastro de Voluntários
+
+Formulário para cadastro com geração automática de código único.
+
+### Grade de Horários
+
+Interface interativa para marcar disponibilidade por horário e atividade.
+
+### Dashboard
+
+Visão completa com estatísticas e grade de todos os voluntários.
+
+## 🛠️ Como Executar
+
+1. Clone o repositório:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/SEU_USUARIO/feira-voluntarios.git
+cd feira-voluntarios
+
+Instale as dependências:
+
+bashnpm install
+
+Configure o banco de dados:
+
+bash# Configure sua URL do Neon no arquivo .env
+npx prisma migrate dev
+npx prisma generate
+
+Execute o projeto:
+
+bashnpm run dev
+
+Acesse: http://localhost:3000
+
+📋 Estrutura do Projeto
+feira-voluntarios/
+├── app/
+│   ├── (home)/              # Página inicial
+│   ├── voluntarios/         # Sistema de cadastro
+│   ├── dashboard/           # Painel administrativo
+│   └── layout.tsx
+├── lib/
+│   └── prisma.ts           # Configuração do banco
+├── prisma/
+│   └── schema.prisma       # Esquema do banco
+└── ...
+🎨 Design System
+
+Cores principais: Azul (#3B82F6), Verde (#10B981), Amarelo (#F59E0B)
+Tipografia: Inter
+Componentes: Totalmente responsivos
+Acessibilidade: Foco em usabilidade
+
+📈 Próximas Funcionalidades
+
+ Sistema de exportação (Excel/PDF)
+ Notificações toast
+ Envio de emails automáticos
+ Sistema de backup
+ Modo escuro
+
+🤝 Contribuição
+Este projeto foi desenvolvido para a comunidade espírita de São José dos Campos.
+📄 Licença
+MIT License - veja o arquivo LICENSE para detalhes.
+
+Feira do Livro Espírita 2025
+Praça Ulysses Guimarães, Jardim Aquárius - São José dos Campos
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
