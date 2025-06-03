@@ -27,8 +27,10 @@ model Disponibilidade {
   data          String
   horario       String
   atividade     String
+  slot          Int        @default(1)
+  createdAt     DateTime   @default(now()) 
   voluntario    Voluntario @relation(fields: [voluntarioId], references: [id], onDelete: Cascade)
   
-  @@unique([voluntarioId, data, horario, atividade])
+  @@unique([voluntarioId, data, horario, atividade,slot])
   @@map("disponibilidades")
 }

@@ -16,7 +16,7 @@ export interface DisponibilidadeData {
   atividade: string;
 }
 
-// Função para gerar identificador da casa espírita
+// ✅ CORREÇÃO DO BUG DE DUPLICAÇÃO NO CÓDIGO
 function gerarIdentificadorCasa(nomeCompleto: string): string {
   // Remover palavras comuns e conectores
   const palavrasIgnorar = [
@@ -43,6 +43,16 @@ function gerarIdentificadorCasa(nomeCompleto: string): string {
     "nossa",
     "senhora",
   ];
+
+  // ✅ PRIMEIRO: verificar se já tem prefixo (ex: "SEARA - Centro...")
+  const temPrefixo = nomeCompleto.includes(" - ");
+  if (temPrefixo) {
+    const prefixo = nomeCompleto.split(" - ")[0].trim();
+    // Se o prefixo é válido (não vazio e não é só números), usar ele
+    if (prefixo && prefixo.length > 1 && !/^\d+$/.test(prefixo)) {
+      return prefixo;
+    }
+  }
 
   const palavras = nomeCompleto
     .toLowerCase()
@@ -126,13 +136,31 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
       return { success: false, error: "Todos os campos são obrigatórios" };
     }
 
-    // Verificar se email já existe
+    // Normalizar email
+    const emailNormalizado = data.email.toLowerCase().trim();
+
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailNormalizado)) {
+      return { success: false, error: "Formato de email inválido" };
+    }
+
+    // ✅ VERIFICAR SE EMAIL JÁ EXISTE E RETORNAR DADOS DO VOLUNTÁRIO
     const emailExistente = await prisma.voluntario.findFirst({
-      where: { email: data.email.toLowerCase() },
+      where: {
+        email: emailNormalizado,
+      },
     });
 
     if (emailExistente) {
-      return { success: false, error: "Este email já está cadastrado" };
+      return {
+        success: false,
+        error: "EMAIL_JA_CADASTRADO", // ✅ Tipo específico de erro
+        voluntarioExistente: {
+          nome: emailExistente.nome,
+          codigo: emailExistente.codigo,
+        },
+      };
     }
 
     // Gerar código único
@@ -144,7 +172,7 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
         codigo,
         nome: data.nome.trim(),
         telefone: data.telefone.replace(/\D/g, ""), // Remove formatação
-        email: data.email.toLowerCase().trim(),
+        email: emailNormalizado,
         casaEspirita: data.casaEspirita.trim(),
       },
     });
@@ -158,6 +186,7 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
         id: voluntario.id,
         codigo: voluntario.codigo,
         nome: voluntario.nome,
+        casaEspirita: voluntario.casaEspirita,
       },
     };
   } catch (error) {
@@ -166,13 +195,19 @@ export async function cadastrarVoluntario(data: CadastroVoluntarioData) {
   }
 }
 
-export async function buscarVoluntarioPorCodigo(codigo: string) {
+export async function buscarVoluntario(codigo: string) {
   try {
+    if (!codigo || !codigo.trim()) {
+      return { success: false, error: "Código é obrigatório" };
+    }
+
     const voluntario = await prisma.voluntario.findFirst({
-      where: { codigo: codigo.toUpperCase() },
+      where: {
+        codigo: codigo.toUpperCase().trim(),
+      },
       include: {
         disponibilidades: {
-          orderBy: [{ data: "asc" }, { horario: "asc" }],
+          orderBy: [{ data: "asc" }, { horario: "asc" }, { atividade: "asc" }],
         },
       },
     });
@@ -188,46 +223,65 @@ export async function buscarVoluntarioPorCodigo(codigo: string) {
   }
 }
 
+export async function buscarVoluntarioPorCodigo(codigo: string) {
+  return buscarVoluntario(codigo);
+}
+
 export async function salvarDisponibilidade(
   voluntarioId: string,
   disponibilidades: DisponibilidadeData[]
 ) {
   try {
-    // Deletar disponibilidades existentes
-    await prisma.disponibilidade.deleteMany({
-      where: { voluntarioId },
-    });
-
-    // Criar novas disponibilidades
-    if (disponibilidades.length > 0) {
-      await prisma.disponibilidade.createMany({
-        data: disponibilidades.map((disp) => ({
-          ...disp,
-          voluntarioId,
-        })),
-      });
+    // Validações
+    if (!voluntarioId || !voluntarioId.trim()) {
+      return { success: false, error: "ID do voluntário é obrigatório" };
     }
 
+    // Verificar se voluntário existe
+    const voluntarioExiste = await prisma.voluntario.findUnique({
+      where: { id: voluntarioId },
+    });
+
+    if (!voluntarioExiste) {
+      return { success: false, error: "Voluntário não encontrado" };
+    }
+
+    // Validar disponibilidades
+    if (disponibilidades.length > 0) {
+      for (const disp of disponibilidades) {
+        if (!disp.data || !disp.horario || !disp.atividade) {
+          return {
+            success: false,
+            error: "Todos os campos de disponibilidade são obrigatórios",
+          };
+        }
+      }
+    }
+
+    // Usar transação para garantir consistência
+    await prisma.$transaction(async (tx) => {
+      // Deletar disponibilidades existentes
+      await tx.disponibilidade.deleteMany({
+        where: { voluntarioId },
+      });
+
+      // Criar novas disponibilidades
+      if (disponibilidades.length > 0) {
+        await tx.disponibilidade.createMany({
+          data: disponibilidades.map((disp) => ({
+            ...disp,
+            voluntarioId,
+          })),
+        });
+      }
+    });
+
     revalidatePath("/voluntarios");
+    revalidatePath("/dashboard");
+
     return { success: true };
   } catch (error) {
     console.error("Erro ao salvar disponibilidade:", error);
     return { success: false, error: "Erro ao salvar disponibilidade" };
-  }
-}
-
-export async function buscarVoluntario(codigo: string) {
-  try {
-    const voluntario = await prisma.voluntario.findUnique({
-      where: { codigo },
-      include: {
-        disponibilidades: true,
-      },
-    });
-
-    return { success: true, voluntario };
-  } catch (error) {
-    console.error("Erro ao buscar voluntário:", error);
-    return { success: false, error: "Erro ao buscar voluntário" };
   }
 }

@@ -17,6 +17,7 @@ interface DisponibilidadeExistente {
   data: string;
   horario: string;
   atividade: string;
+  slot: number;
 }
 
 const DADOS_FEIRA = {
@@ -35,28 +36,397 @@ const DADOS_FEIRA = {
     { key: "dom_24", label: "DOM\n24/ago", dia: "24/08" },
   ],
   horarios: ["08h-10h", "10h-12h", "12h-14h", "14h-16h", "16h-18h", "18h-20h"],
-  atividades: [
-    {
-      key: "transporte",
-      label: "Transporte e montagem das estantes",
+};
+
+// ✅ MAPEAMENTO ESPECÍFICO DE CORES POR DATA/HORÁRIO
+const MAPA_CORES: Record<
+  string,
+  Record<string, { tipo: string; cor: string; atividade: string }>
+> = {
+  "13/08": {
+    "08h-10h": {
+      tipo: "desabilitado",
+      cor: "bg-gray-100",
+      atividade: "Desabilitado",
+    },
+    "10h-12h": {
+      tipo: "desabilitado",
+      cor: "bg-gray-100",
+      atividade: "Desabilitado",
+    },
+    "12h-14h": {
+      tipo: "desabilitado",
+      cor: "bg-gray-100",
+      atividade: "Desabilitado",
+    },
+    "14h-16h": {
+      tipo: "transporte",
       cor: "bg-yellow-200",
+      atividade: "Transporte e Montagem",
     },
-    {
-      key: "organizacao",
-      label: "Organização dos livros nas estantes",
+    "16h-18h": {
+      tipo: "transporte",
+      cor: "bg-yellow-200",
+      atividade: "Transporte e Montagem",
+    },
+    "18h-20h": {
+      tipo: "transporte",
+      cor: "bg-yellow-200",
+      atividade: "Transporte e Montagem",
+    },
+  },
+  "14/08": {
+    "08h-10h": {
+      tipo: "decoracao",
       cor: "bg-pink-200",
+      atividade: "Decoração",
     },
-    {
-      key: "desmontagem_15h",
-      label: "Desmontagem (a partir das 15h)",
-      cor: "bg-purple-200",
+    "10h-12h": {
+      tipo: "decoracao",
+      cor: "bg-pink-200",
+      atividade: "Decoração",
     },
-    {
-      key: "desmontagem_18h",
-      label: "Desmontagem (a partir das 18h)",
+    "12h-14h": {
+      tipo: "decoracao",
+      cor: "bg-pink-200",
+      atividade: "Decoração",
+    },
+    "14h-16h": {
+      tipo: "decoracao",
+      cor: "bg-pink-200",
+      atividade: "Decoração",
+    },
+    "16h-18h": {
+      tipo: "decoracao",
+      cor: "bg-pink-200",
+      atividade: "Decoração",
+    },
+    "18h-20h": {
+      tipo: "transporte_livros",
       cor: "bg-green-200",
+      atividade: "Transporte e disposição dos Livros",
     },
-  ],
+  },
+  "15/08": {
+    "08h-10h": {
+      tipo: "organizacao",
+      cor: "bg-blue-200",
+      atividade: "Organização dos livros nas estantes",
+    },
+    "10h-12h": {
+      tipo: "organizacao",
+      cor: "bg-blue-200",
+      atividade: "Organização dos livros nas estantes",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "16/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "17/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "18/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "19/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "20/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "21/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "22/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "23/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "18h-20h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+  },
+  "24/08": {
+    "08h-10h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "10h-12h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "12h-14h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "14h-16h": {
+      tipo: "feira_aberta",
+      cor: "bg-white",
+      atividade: "Feira Aberta",
+    },
+    "16h-18h": {
+      tipo: "desmontagem",
+      cor: "bg-gray-200",
+      atividade: "Desmontagem à partir das 15h",
+    },
+    "18h-20h": {
+      tipo: "desmontagem",
+      cor: "bg-gray-200",
+      atividade: "Desmontagem à partir das 15h",
+    },
+  },
 };
 
 export default function GradeHorarios({ voluntario }: Props) {
@@ -70,7 +440,7 @@ export default function GradeHorarios({ voluntario }: Props) {
       const disponibilidadesExistentes = new Set<string>(
         voluntario.disponibilidades.map(
           (d: DisponibilidadeExistente) =>
-            `${d.data}-${d.horario}-${d.atividade}`
+            `${d.data}-${d.horario}-${d.atividade}-${d.slot}`
         )
       );
       setDisponibilidades(disponibilidadesExistentes);
@@ -80,9 +450,18 @@ export default function GradeHorarios({ voluntario }: Props) {
   const toggleDisponibilidade = (
     data: string,
     horario: string,
-    atividade: string
+    slot: number
   ) => {
-    const key = `${data}-${horario}-${atividade}`;
+    const configPeriodo =
+      MAPA_CORES[data as keyof typeof MAPA_CORES]?.[horario];
+
+    // Não permitir seleção em períodos desabilitados
+    if (configPeriodo?.tipo === "desabilitado") {
+      return;
+    }
+
+    const atividade = configPeriodo?.tipo || "feira_aberta";
+    const key = `${data}-${horario}-${atividade}-${slot}`;
     const newDisponibilidades = new Set(disponibilidades);
 
     if (newDisponibilidades.has(key)) {
@@ -101,8 +480,13 @@ export default function GradeHorarios({ voluntario }: Props) {
       const disponibilidadesArray: DisponibilidadeData[] = Array.from(
         disponibilidades
       ).map((key) => {
-        const [data, horario, atividade] = key.split("-");
-        return { data, horario, atividade };
+        const [data, horario, atividade, slotStr] = key.split("-");
+        return {
+          data,
+          horario,
+          atividade,
+          slot: parseInt(slotStr),
+        };
       });
 
       const result = await salvarDisponibilidade(
@@ -113,7 +497,7 @@ export default function GradeHorarios({ voluntario }: Props) {
       if (result.success) {
         alert("Disponibilidades salvas com sucesso!");
       } else {
-        alert("Erro ao salvar disponibilidades");
+        alert(result.error || "Erro ao salvar disponibilidades");
       }
     } catch (error) {
       alert("Erro ao salvar disponibilidades");
@@ -163,17 +547,44 @@ export default function GradeHorarios({ voluntario }: Props) {
         </button>
       </div>
 
+      {/* ✅ LEGENDA COMPLETA DAS ATIVIDADES */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold text-gray-800 mb-3">
           Legenda das Atividades
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {DADOS_FEIRA.atividades.map((atividade) => (
-            <div key={atividade.key} className="flex items-center">
-              <div className={`w-4 h-4 rounded mr-3 ${atividade.cor}`}></div>
-              <span className="text-sm text-gray-700">{atividade.label}</span>
-            </div>
-          ))}
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-yellow-200 border border-yellow-300"></div>
+            <span className="text-sm text-gray-700">
+              Transporte e montagem das estantes
+            </span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-blue-200 border border-blue-300"></div>
+            <span className="text-sm text-gray-700">
+              Organização dos livros nas estantes
+            </span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-pink-200 border border-pink-300"></div>
+            <span className="text-sm text-gray-700">Decoração</span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-green-200 border border-green-300"></div>
+            <span className="text-sm text-gray-700">
+              Transporte e disposição dos livros
+            </span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-gray-200 border border-gray-300"></div>
+            <span className="text-sm text-gray-700">
+              Desmontagem (a partir das 15h)
+            </span>
+          </div>
+          <div className="flex items-center">
+            <div className="w-4 h-4 rounded mr-3 bg-white border border-gray-400"></div>
+            <span className="text-sm text-gray-700">Feira Aberta</span>
+          </div>
         </div>
       </div>
 
@@ -195,61 +606,75 @@ export default function GradeHorarios({ voluntario }: Props) {
             ))}
           </div>
 
-          {/* Linhas de horários e atividades */}
-          {DADOS_FEIRA.horarios.map((horario) => (
-            <div key={horario}>
-              {DADOS_FEIRA.atividades.map((atividade) => (
-                <div
-                  key={`${horario}-${atividade.key}`}
-                  className="grid grid-cols-13 gap-1 mb-1"
-                >
-                  <div className="p-2 text-xs font-medium text-gray-700 flex flex-col items-start">
-                    <div className="flex items-center">
-                      <Clock className="w-3 h-3 mr-1" />
-                      {horario}
-                    </div>
-                    <span className="text-xs text-gray-500 mt-1">
-                      {atividade.label.length > 20
-                        ? `${atividade.label.substring(0, 20)}...`
-                        : atividade.label}
-                    </span>
+          {/* ✅ LINHAS DE HORÁRIOS - 4 SLOTS POR HORÁRIO EM LINHAS SEPARADAS */}
+          {DADOS_FEIRA.horarios.map((horario) =>
+            [1, 2, 3, 4].map((slot) => (
+              <div
+                key={`${horario}-slot-${slot}`}
+                className="grid grid-cols-13 gap-1 mb-1"
+              >
+                {/* ✅ COLUNA DO HORÁRIO COM SLOT */}
+                <div className="p-2 text-xs font-medium text-gray-700 flex items-center justify-center border-r border-gray-200 bg-gray-50">
+                  <div className="text-center">
+                    <div className="font-semibold">{horario}</div>
+                    <div className="text-[10px] text-gray-500">Slot {slot}</div>
                   </div>
-
-                  {DADOS_FEIRA.datas.map((data) => {
-                    const key = `${data.dia}-${horario}-${atividade.key}`;
-                    const isSelected = disponibilidades.has(key);
-
-                    return (
-                      <button
-                        key={`${data.key}-${horario}-${atividade.key}`}
-                        onClick={() =>
-                          toggleDisponibilidade(
-                            data.dia,
-                            horario,
-                            atividade.key
-                          )
-                        }
-                        className={`p-2 rounded border-2 transition-all min-h-[40px] text-xs font-medium ${
-                          isSelected
-                            ? `${atividade.cor} border-gray-400 font-bold`
-                            : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                        }`}
-                      >
-                        {isSelected ? voluntario.codigo : ""}
-                      </button>
-                    );
-                  })}
                 </div>
-              ))}
-            </div>
-          ))}
+
+                {/* ✅ QUADRADOS POR DATA */}
+                {DADOS_FEIRA.datas.map((data) => {
+                  const configPeriodo =
+                    MAPA_CORES[data.dia as keyof typeof MAPA_CORES]?.[horario];
+                  const isDesabilitado = configPeriodo?.tipo === "desabilitado";
+
+                  const key = `${data.dia}-${horario}-${
+                    configPeriodo?.tipo || "feira_aberta"
+                  }-${slot}`;
+                  const isSelected = disponibilidades.has(key);
+
+                  return (
+                    <button
+                      key={`${data.key}-${horario}-slot-${slot}`}
+                      onClick={() =>
+                        toggleDisponibilidade(data.dia, horario, slot)
+                      }
+                      disabled={isDesabilitado}
+                      className={`
+                        p-2 rounded border transition-all min-h-[35px] text-xs font-bold
+                        ${configPeriodo?.cor || "bg-white"}
+                        ${
+                          isDesabilitado
+                            ? "cursor-not-allowed opacity-30 border-gray-300"
+                            : "cursor-pointer hover:opacity-80 border-gray-400"
+                        }
+                        ${
+                          isSelected
+                            ? "ring-1 ring-blue-500 border-blue-400"
+                            : ""
+                        }
+                        ${
+                          configPeriodo?.cor === "bg-white"
+                            ? "border-gray-300"
+                            : ""
+                        }
+                      `}
+                      title={configPeriodo?.atividade || "Feira Aberta"}
+                    >
+                      {isSelected ? voluntario.codigo : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
       <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
         <p className="text-sm text-blue-800">
-          <strong>💡 Como usar:</strong> Clique nos quadrados para marcar os
-          horários em que você está disponível. Seu código aparecerá nos
+          <strong>💡 Como usar:</strong> Clique nos quadrados coloridos para
+          marcar os horários em que você está disponível. Cada cor representa
+          uma atividade específica daquele período. Seu código aparecerá nos
           horários selecionados.
         </p>
       </div>
