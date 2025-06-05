@@ -64,19 +64,6 @@ export default function HomePage() {
           </div>
         </Link>
       </div>
-
-      <div className="mt-16 text-center">
-        <div className="bg-white rounded-lg p-6 shadow-lg max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            📍 Endereço do Centro Espírita
-          </h3>
-          <p className="text-gray-600">
-            Seara de Luz - Rua Ana Gonçalves da Cunha, 30a - Jd. Jussara
-            <br />
-            (ao lado da Obra Social Célio Lemos)
-          </p>
-        </div>
-      </div>
     </div>
   );
 }
