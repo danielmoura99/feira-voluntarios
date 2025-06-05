@@ -440,7 +440,8 @@ export default function GradeHorarios({ voluntario }: Props) {
       const disponibilidadesExistentes = new Set<string>(
         voluntario.disponibilidades.map(
           (d: DisponibilidadeExistente) =>
-            `${d.data}-${d.horario}-${d.atividade}-${d.slot}`
+            // ✅ USAR | EM VEZ DE -
+            `${d.data}|${d.horario}|${d.atividade}|${d.slot}`
         )
       );
       setDisponibilidades(disponibilidadesExistentes);
@@ -459,10 +460,10 @@ export default function GradeHorarios({ voluntario }: Props) {
       return;
     }
 
-    const atividade = configPeriodo?.tipo || "feira_aberta";
+    const tipoAtividade = configPeriodo?.tipo || "feira_aberta";
 
-    // ✅ INCLUIR O SLOT NA CHAVE
-    const key = `${data}-${horario}-${atividade}-${slot}`;
+    // ✅ USAR | EM VEZ DE -
+    const key = `${data}|${horario}|${tipoAtividade}|${slot}`;
     const newDisponibilidades = new Set(disponibilidades);
 
     if (newDisponibilidades.has(key)) {
@@ -472,37 +473,47 @@ export default function GradeHorarios({ voluntario }: Props) {
     }
 
     setDisponibilidades(newDisponibilidades);
+
+    console.log(
+      `🔄 Toggle: ${data} ${horario} slot ${slot} - ${tipoAtividade}`
+    );
+    console.log("📊 Disponibilidades atuais:", Array.from(newDisponibilidades));
   };
 
   const salvarAlteracoes = async () => {
     setSaving(true);
 
     try {
+      console.log("🚀 Preparando dados para salvamento...");
+
       const disponibilidadesArray: DisponibilidadeData[] = Array.from(
         disponibilidades
       ).map((key) => {
-        const parts = key.split("-");
+        console.log(`🔍 Processando chave: "${key}"`);
+        // ✅ USAR | EM VEZ DE -
+        const parts = key.split("|");
+        console.log(`📊 Parts divididas:`, parts);
 
-        // ✅ VERIFICAR SE TEM 4 PARTES (data-horario-atividade-slot)
         if (parts.length === 4) {
           const [data, horario, atividade, slotStr] = parts;
-          return {
+          const slot = parseInt(slotStr);
+
+          const disponibilidade = {
             data,
             horario,
             atividade,
-            slot: parseInt(slotStr),
+            slot,
           };
+
+          console.log(`✅ Disponibilidade criada:`, disponibilidade);
+          return disponibilidade;
         } else {
-          // ✅ FALLBACK para dados antigos sem slot
-          const [data, horario, atividade] = parts;
-          return {
-            data,
-            horario,
-            atividade,
-            slot: 1, // slot padrão
-          };
+          console.error(`❌ Formato de chave inválido: "${key}"`);
+          throw new Error(`Formato inválido de disponibilidade: ${key}`);
         }
       });
+
+      console.log("📋 Array final para envio:", disponibilidadesArray);
 
       const result = await salvarDisponibilidade(
         voluntario.id,
@@ -510,12 +521,14 @@ export default function GradeHorarios({ voluntario }: Props) {
       );
 
       if (result.success) {
-        alert("Disponibilidades salvas com sucesso!");
+        alert("✅ Disponibilidades salvas com sucesso!");
       } else {
-        alert(result.error || "Erro ao salvar disponibilidades");
+        console.error("❌ Erro retornado:", result.error);
+        alert(`❌ Erro ao salvar: ${result.error}`);
       }
     } catch (error) {
-      alert("Erro ao salvar disponibilidades");
+      console.error("❌ Erro no frontend:", error);
+      alert("❌ Erro inesperado ao salvar disponibilidades");
     } finally {
       setSaving(false);
     }
@@ -560,6 +573,31 @@ export default function GradeHorarios({ voluntario }: Props) {
             </>
           )}
         </button>
+      </div>
+
+      {/* ✅ CONTADOR DE SELEÇÕES PARA DEBUG */}
+      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p className="text-sm text-blue-800">
+          <strong>📊 Seleções atuais:</strong> {disponibilidades.size} horários
+          selecionados
+        </p>
+        {disponibilidades.size > 0 && (
+          <div className="mt-2 text-xs text-blue-600">
+            {Array.from(disponibilidades)
+              .slice(0, 3)
+              .map((key) => (
+                <span
+                  key={key}
+                  className="inline-block bg-blue-200 rounded px-2 py-1 mr-1 mb-1"
+                >
+                  {key}
+                </span>
+              ))}
+            {disponibilidades.size > 3 && (
+              <span>... e mais {disponibilidades.size - 3}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ✅ LEGENDA COMPLETA DAS ATIVIDADES */}
@@ -642,9 +680,9 @@ export default function GradeHorarios({ voluntario }: Props) {
                     MAPA_CORES[data.dia as keyof typeof MAPA_CORES]?.[horario];
                   const isDesabilitado = configPeriodo?.tipo === "desabilitado";
 
-                  const key = `${data.dia}-${horario}-${
-                    configPeriodo?.tipo || "feira_aberta"
-                  }-${slot}`;
+                  // ✅ USAR O TIPO DIRETAMENTE
+                  const tipoAtividade = configPeriodo?.tipo || "feira_aberta";
+                  const key = `${data.dia}|${horario}|${tipoAtividade}|${slot}`;
                   const isSelected = disponibilidades.has(key);
 
                   return (
@@ -664,7 +702,7 @@ export default function GradeHorarios({ voluntario }: Props) {
                         }
                         ${
                           isSelected
-                            ? "ring-1 ring-blue-500 border-blue-400"
+                            ? "ring-2 ring-blue-500 border-blue-400 shadow-md"
                             : ""
                         }
                         ${
@@ -673,7 +711,9 @@ export default function GradeHorarios({ voluntario }: Props) {
                             : ""
                         }
                       `}
-                      title={configPeriodo?.atividade || "Feira Aberta"}
+                      title={`${
+                        configPeriodo?.atividade || "Feira Aberta"
+                      } - Slot ${slot}`}
                     >
                       {isSelected ? voluntario.codigo : ""}
                     </button>
@@ -690,7 +730,8 @@ export default function GradeHorarios({ voluntario }: Props) {
           <strong>💡 Como usar:</strong> Clique nos quadrados coloridos para
           marcar os horários em que você está disponível. Cada cor representa
           uma atividade específica daquele período. Seu código aparecerá nos
-          horários selecionados.
+          horários selecionados. Você pode selecionar múltiplos slots por
+          horário.
         </p>
       </div>
     </div>
